@@ -1021,6 +1021,9 @@ resource "aws_ram_resource_share" "test" {
 resource "aws_ram_resource_association" "test" {
   resource_arn       = aws_vpc_ipam_pool.test.arn
   resource_share_arn = aws_ram_resource_share.test.arn
+  depends_on = [
+    time_sleep.ram_onboarding_eventual_consistency
+  ]
 }
 resource "aws_ram_principal_association" "test" {
   principal          = data.aws_organizations_organization.test.arn
