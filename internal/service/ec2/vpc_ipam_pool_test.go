@@ -479,13 +479,7 @@ func TestAccIPAMPool_ResourcePlanningVPC_crossAccount(t *testing.T) { // nosemgr
 		},
 		ErrorCheck:               acctest.ErrorCheck(t, names.EC2ServiceID),
 		ProtoV5ProviderFactories: acctest.ProtoV5FactoriesNamedAlternate(ctx, t, providers),
-		ExternalProviders: map[string]resource.ExternalProvider{
-			"time": {
-				Source:            "hashicorp/time",
-				VersionConstraint: "0.13.0",
-			},
-		},
-		CheckDestroy: testAccCheckIPAMPoolDestroy(ctx),
+		CheckDestroy:             testAccCheckIPAMPoolDestroy(ctx),
 		Steps: []resource.TestStep{
 			{
 				// Run a simple configuration to initialize the alternate providers
@@ -970,16 +964,6 @@ data "aws_organizations_organization" "test" {
   provider = awsalternate
 }
 
-# Enable RAM sharing with AWS Organizations (must be in management account)
-resource "aws_ram_sharing_with_organization" "test" {
-  provider = awsalternate
-}
-
-resource "time_sleep" "ram_onboarding_eventual_consistency" {
-  depends_on      = [aws_ram_sharing_with_organization.test]
-  create_duration = "60s"
-}
-
 # Primary account must be org IPAM admin account
 resource "aws_vpc_ipam_organization_admin_account" "test" {
   provider = awsalternate
@@ -1021,16 +1005,10 @@ resource "aws_ram_resource_share" "test" {
 resource "aws_ram_resource_association" "test" {
   resource_arn       = aws_vpc_ipam_pool.test.arn
   resource_share_arn = aws_ram_resource_share.test.arn
-  depends_on = [
-    time_sleep.ram_onboarding_eventual_consistency
-  ]
 }
 resource "aws_ram_principal_association" "test" {
   principal          = data.aws_organizations_organization.test.arn
   resource_share_arn = aws_ram_resource_share.test.arn
-  depends_on = [
-    time_sleep.ram_onboarding_eventual_consistency
-  ]
 }
 
 # Alternate account - VPC to be managed by IPAM (same as Org admin account)
